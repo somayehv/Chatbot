@@ -1,5 +1,6 @@
 import nltk
 import csv
+from nltk.stem import *
 
 
 class ChatBot:
@@ -56,6 +57,9 @@ class ChatBot:
             temp = category.split('&')
             for word in temp:
                 self.key_word_to_category_map[word.strip()] = category
+                stem = stemmer.stem(word.strip())
+                if stem not in self.key_word_to_category_map:
+                    self.key_word_to_category_map[stem] = category
         self.category_key_words.update(self.key_word_to_category_map.keys())
 
     def make_key_word_to_product_map(self):
@@ -175,6 +179,7 @@ class ChatBot:
 
 
 if __name__ == "__main__":
+    stemmer = PorterStemmer()
     chatbot = ChatBot()
     chatbot.extract_data_from_file('Data.csv')
     chatbot.make_key_word_to_category_map()
