@@ -89,6 +89,10 @@ class ChatBot:
         if any(word in self.product_names for word in words):
             self.found_product_names = {word for word in words if word in self.product_names}
 
+    def update_found_categories_using_key_words(self):
+        self.found_categories.update([self.key_word_to_category_map[key_word]
+                                      for key_word in self.found_category_key_words])
+
     def generate_response(self):
         response = self.DEFAULT_RESPONSE
         if any(self.sentence == product_name for product_name in self.product_names):
@@ -110,10 +114,6 @@ class ChatBot:
         elif self.found_brand_key_words:
             response = self.suggest_product_names_from_brands()
         elif self.found_categories:
-            response = self.suggest_brands()
-        elif self.found_category_key_words:
-            self.found_categories.update([self.key_word_to_category_map[key_word]
-                                          for key_word in self.found_category_key_words])
             response = self.suggest_brands()
         return response
 
@@ -188,4 +188,5 @@ if __name__ == "__main__":
     while chatbot.sentence != 'exit':
         chatbot.sentence = input().lower()
         chatbot.update_key_words()
+        chatbot.update_found_categories_using_key_words()
         print(chatbot.generate_response())
