@@ -14,6 +14,7 @@ class ChatBot:
     def __init__(self):
         self.store_data = {}
         self.brand_to_products_map = {}
+        self.brand_to_categories_map = {}
         self.product_names = []
         self.brands = set()
         self.categories = set()
@@ -26,7 +27,7 @@ class ChatBot:
         self.sentence = ''
         self.found_category_key_words = set()
         self.found_categories = set()
-        self.found_brand_key_words = set()
+        self.found_brands = set()
         self.found_product_key_words = set()
         self.found_product_names = set()
 
@@ -51,6 +52,9 @@ class ChatBot:
                     self.brand_to_products_map[brand].append(product)
                     self.store_data[category][brand][product] = price
                     self.product_name_to_price_map[product] = price
+                    if brand not in self.brand_to_categories_map:
+                        self.brand_to_categories_map[brand] = set()
+                    self.brand_to_categories_map[brand].add(category)
 
     def make_key_word_to_category_map(self):
         for category in self.categories:
@@ -83,7 +87,7 @@ class ChatBot:
         if any(word in self.categories for word in words):
             self.found_categories = {word for word in words if word in self.categories}
         if any(word in self.brands for word in words):
-            self.found_brand_key_words = {word for word in words if word in self.brands}
+            self.found_brands = {word for word in words if word in self.brands}
         if any(word in self.product_key_words for word in words):
             self.found_product_key_words = {word for word in words if word in self.product_key_words}
         if any(word in self.product_names for word in words):
@@ -94,27 +98,29 @@ class ChatBot:
                                       for key_word in self.found_category_key_words])
 
     def generate_response(self):
-        response = self.DEFAULT_RESPONSE
         if any(self.sentence == product_name for product_name in self.product_names):
             self.found_product_names = {self.sentence}
-            response = self.offer_prices()
+            return self.offer_prices()
         if self.sentence == 'exit':
-            response = self.GOODBYE
-        elif self.sentence == 'reset':
+            return self.GOODBYE
+        if self.sentence == 'reset':
             self.found_categories = set()
             self.found_category_key_words = set()
-            self.found_brand_key_words = set()
+            self.found_brands = set()
             self.found_product_key_words = set()
             self.found_product_names = set()
-            response = self.WELCOME_BACK
-        elif self.found_product_names:
-            response = self.offer_prices()
-        elif self.found_product_key_words:
+            return self.WELCOME_BACK
+        if self.found_product_names:
+            return self.offer_prices()
+        response = self.DEFAULT_RESPONSE
+        if self.found_product_key_words:
             response = self.suggest_product_names_from_key_words()
-        elif self.found_brand_key_words:
-            response = self.suggest_product_names_from_brands()
-        elif self.found_categories:
+        elif self.found_brands and not self.found_categories:
+            response = self.suggest_categories()
+        elif self.found_categories and not self.found_brands:
             response = self.suggest_brands()
+        elif self.found_category_key_words and self.found_brands:
+            response = self.suggest_product_names_from_categories_and_brands()
         return response
 
     def offer_prices(self):
@@ -124,39 +130,88 @@ class ChatBot:
                 product_name, self.product_name_to_price_map[product_name]) + '\n'
         return response
 
+    def suggest_categories(self):
+        response = ''
+        if len(self.found_brands) > 1:
+            response = 'Which one of the brands you mentioned are you interested in?'
+            for brand in self.found_brands:
+                response += '\n' + brand
+        elif len(self.found_brands) == 1:
+            brand = list(self.found_brands)[0]
+            categories = self.brand_to_categories_map[brand]
+            if len(categories) == 1:
+                self.found_categories.add(list(categories)[0])
+            else:
+                response = 'I understand you are interested in the brand {}. ' \
+                           'Which of the following categories are you interested in?'.format(brand)
+                for category in categories:
+                    response += '\n' + category
+        return response
+
     def suggest_product_names_from_key_words(self):
+        possible_product_names = set()
         for key_word in self.found_product_key_words:
-            self.found_product_names.update(self.key_word_to_product_map[key_word])
-        if len(self.found_product_names) == 1:
+            possible_product_names.update(self.key_word_to_product_map[key_word])
+        if len(possible_product_names) == 1:
+            self.found_product_names.update(possible_product_names)
             response = 'We offer the following product:'
             response = response + '\n' + self.offer_prices()
         else:
             response = 'Which of the following products do you want? (Please write only the exact product name.)'
-            for product in self.found_product_names:
+            for product in possible_product_names:
                 response += '\n' + product
         return response
 
-    def suggest_product_names_from_brands(self):
-        if len(self.found_brand_key_words) == 1:
-            if len(self.brand_to_products_map[list(self.found_brand_key_words)[0]]) == 1:
-                self.found_product_names.add(self.brand_to_products_map[list(self.found_brand_key_words)[0]][0])
-                response = 'We offer the following product:'
-                response = response + '\n' + self.offer_prices()
+    def suggest_product_names_from_categories_and_brands(self):
+        if len(self.found_brands) == 1:
+            brand = list(self.found_brands)[0]
+            if len(self.brand_to_categories_map[brand]) == 1:
+                if len(self.brand_to_products_map[brand]) == 1:
+                    product_name = self.brand_to_products_map[brand][0]
+                    self.found_product_names.add(product_name)
+                    response = 'We offer the following product:'
+                    response += '\n' + self.offer_prices()
+                else:
+                    response = \
+                        'Which of the following products do you want? (Please write only the exact product name.)'
+                    for product in self.brand_to_products_map[brand]:
+                        response += '\n' + product
             else:
-                response = 'Which of the following products do you want? (Please write only the exact product name.)'
-                for product in self.brand_to_products_map[list(self.found_brand_key_words)[0]]:
-                    response = response + '\n' + product
+                possible_categories = [cat for cat in self.brand_to_categories_map[brand]]
+                intersection_of_categories = self.found_categories.intersection(possible_categories)
+                if len(intersection_of_categories) == 1:
+                    category = list(intersection_of_categories)[0]
+                    if len(self.brand_to_products_map[brand]) == 1:
+                        product_name = self.brand_to_products_map[brand][0]
+                        self.found_product_names.add(product_name)
+                        response = 'We offer the following product:'
+                        response += '\n' + self.offer_prices()
+                    else:
+                        response = \
+                            'Which of the following products do you want? (Please write only the exact product name.)'
+                        for product in self.store_data[category][brand]:
+                            response += '\n' + product
+                elif len(intersection_of_categories) == 0:
+                    response = 'Which of the following categories are you interested in?'
+                    for category in possible_categories:
+                        response += '\n' + category
+                else:
+                    response = 'Which of the following categories are you interested in?'
+                    for category in intersection_of_categories:
+                        response += '\n' + category
         else:
-            response = 'We offer the following brands:'
-            for brand in self.found_brand_key_words:
+            response = 'Which of the following brands are you interested in?'
+            for brand in self.found_brands:
                 response = response + '\n' + brand
         return response
 
     def suggest_brands(self):
         if len(self.found_categories) == 1:
-            response = 'I understand that you are interested in the category {}'.format(list(self.found_categories)[0])
-            if len(self.store_data[list(self.found_categories)[0]]) == 1:
-                if len(self.brand_to_products_map[self.store_data[list(self.found_categories)[0]][0]]) == 1:
+            category = list(self.found_categories)[0]
+            response = 'I understand that you are interested in the category {}'.format(category)
+            if len(self.store_data[category]) == 1:
+                brand = self.store_data[category][0]
+                if len(self.brand_to_products_map[brand]) == 1:
                     self.found_product_names.add(
                         self.brand_to_products_map[self.store_data[list(self.found_categories)[0]][0]][0])
                     response += '\n' + self.offer_prices()
@@ -167,7 +222,7 @@ class ChatBot:
                         response += '\n' + product
             else:
                 response += '\nWe offer the following brands:'
-                for brand in self.store_data[list(self.found_categories)[0]]:
+                for brand in self.store_data[category]:
                     response += '\n' + brand
         else:
             response = ''
