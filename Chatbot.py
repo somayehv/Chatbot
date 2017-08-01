@@ -186,43 +186,44 @@ class ChatBot:
         if len(self.found_brands) == 1:
             brand = list(self.found_brands)[0]
             if len(self.brand_to_categories_map[brand]) == 1:
-                if len(self.brand_to_products_map[brand]) == 1:
-                    product_name = self.brand_to_products_map[brand][0]
-                    self.found_product_names.add(product_name)
-                    response = 'We offer the following product:'
-                    response += '\n' + self.offer_prices()
-                else:
-                    response = 'Which of the following products are you interested in?'
-                    for product in self.brand_to_products_map[brand]:
-                        response += '\n' + product
-                        self.possible_product_names.add(product)
+                response = \
+                    self.suggest_product_names_from_one_category_and_one_brand(brand, self.brand_to_products_map[brand])
             else:
-                possible_categories = [cat for cat in self.brand_to_categories_map[brand]]
-                intersection_of_categories = self.found_categories.intersection(possible_categories)
-                if len(intersection_of_categories) == 1:
-                    category = list(intersection_of_categories)[0]
-                    if len(self.brand_to_products_map[brand]) == 1:
-                        product_name = self.brand_to_products_map[brand][0]
-                        self.found_product_names.add(product_name)
-                        response = 'We offer the following product:'
-                        response += '\n' + self.offer_prices()
-                    else:
-                        response = 'Which of the following products are you interested in?'
-                        for product in self.store_data[category][brand]:
-                            response += '\n' + product
-                            self.possible_product_names.add(product)
-                elif len(intersection_of_categories) == 0:
-                    response = 'Which of the following categories are you interested in?'
-                    for category in possible_categories:
-                        response += '\n' + category
-                else:
-                    response = 'Which of the following categories are you interested in?'
-                    for category in intersection_of_categories:
-                        response += '\n' + category
+                response = self.suggest_product_names_from_multiple_categories_and_one_brand(brand)
         else:
             response = 'Which of the following brands are you interested in?'
             for brand in self.found_brands:
                 response = response + '\n' + brand
+        return response
+
+    def suggest_product_names_from_one_category_and_one_brand(self, brand, products):
+        if len(self.brand_to_products_map[brand]) == 1:
+            product_name = self.brand_to_products_map[brand][0]
+            self.found_product_names.add(product_name)
+            response = 'We offer the following product:'
+            response += '\n' + self.offer_prices()
+        else:
+            response = 'Which of the following products are you interested in?'
+            for product in products:
+                response += '\n' + product
+                self.possible_product_names.add(product)
+        return response
+
+    def suggest_product_names_from_multiple_categories_and_one_brand(self, brand):
+        possible_categories = [cat for cat in self.brand_to_categories_map[brand]]
+        intersection_of_categories = self.found_categories.intersection(possible_categories)
+        if len(intersection_of_categories) == 1:
+            category = list(intersection_of_categories)[0]
+            response = \
+                self.suggest_product_names_from_one_category_and_one_brand(brand, self.store_data[category][brand])
+        elif len(intersection_of_categories) == 0:
+            response = 'Which of the following categories are you interested in?'
+            for category in possible_categories:
+                response += '\n' + category
+        else:
+            response = 'Which of the following categories are you interested in?'
+            for category in intersection_of_categories:
+                response += '\n' + category
         return response
 
     def suggest_brands(self):
