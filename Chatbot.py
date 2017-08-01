@@ -30,6 +30,7 @@ class ChatBot:
         self.found_brands = set()
         self.found_product_key_words = set()
         self.found_product_names = set()
+        self.possible_product_names = set()
 
     def extract_data_from_file(self, file_name):
         with open(file_name, 'r') as csvfile:
@@ -112,6 +113,16 @@ class ChatBot:
             return self.WELCOME_BACK
         if self.found_product_names:
             return self.offer_prices()
+        if self.possible_product_names:
+            tokens = nltk.word_tokenize(self.sentence)
+            names_with_intersections = set()
+            for name in self.possible_product_names:
+                temp_tokens = nltk.word_tokenize(name)
+                if set(temp_tokens).intersection(tokens):
+                    names_with_intersections.add(name)
+            if names_with_intersections:
+                self.found_product_names = names_with_intersections
+                return self.offer_prices()
         response = self.DEFAULT_RESPONSE
         if self.found_product_key_words:
             response = self.suggest_product_names_from_key_words()
@@ -157,9 +168,10 @@ class ChatBot:
             response = 'We offer the following product:'
             response = response + '\n' + self.offer_prices()
         else:
-            response = 'Which of the following products do you want? (Please write only the exact product name.)'
+            response = 'Which of the following products are you interested in?'
             for product in possible_product_names:
                 response += '\n' + product
+                self.possible_product_names.add(product)
         return response
 
     def suggest_product_names_from_categories_and_brands(self):
@@ -172,10 +184,10 @@ class ChatBot:
                     response = 'We offer the following product:'
                     response += '\n' + self.offer_prices()
                 else:
-                    response = \
-                        'Which of the following products do you want? (Please write only the exact product name.)'
+                    response = 'Which of the following products are you interested in?'
                     for product in self.brand_to_products_map[brand]:
                         response += '\n' + product
+                        self.possible_product_names.add(product)
             else:
                 possible_categories = [cat for cat in self.brand_to_categories_map[brand]]
                 intersection_of_categories = self.found_categories.intersection(possible_categories)
@@ -187,10 +199,10 @@ class ChatBot:
                         response = 'We offer the following product:'
                         response += '\n' + self.offer_prices()
                     else:
-                        response = \
-                            'Which of the following products do you want? (Please write only the exact product name.)'
+                        response = 'Which of the following products are you interested in?'
                         for product in self.store_data[category][brand]:
                             response += '\n' + product
+                            self.possible_product_names.add(product)
                 elif len(intersection_of_categories) == 0:
                     response = 'Which of the following categories are you interested in?'
                     for category in possible_categories:
@@ -216,10 +228,10 @@ class ChatBot:
                         self.brand_to_products_map[self.store_data[list(self.found_categories)[0]][0]][0])
                     response += '\n' + self.offer_prices()
                 else:
-                    response += \
-                        '\nWhich of the following products do you want? (Please write only the exact product name.)'
+                    response += '\nWhich of the following products are you interested in?'
                     for product in self.brand_to_products_map[self.store_data[list(self.found_categories)[0]][0]]:
                         response += '\n' + product
+                        self.possible_product_names.add(product)
             else:
                 response += '\nWe offer the following brands:'
                 for brand in self.store_data[category]:
