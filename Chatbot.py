@@ -73,7 +73,7 @@ class ChatBot:
         for product in self.product_names:
             tokens = nltk.word_tokenize(product)
             pos = nltk.pos_tag(tokens)
-            key_words = [word for word, word_pos in pos if word_pos in ['NN', 'NNP', 'NNS', 'NNPS']]
+            key_words = [word for word, word_pos in pos if (word_pos in ['NN', 'NNP', 'NNS', 'NNPS'] and len(word) > 2)]
             for key_word in key_words:
                 if key_word not in self.key_word_to_product_map:
                     self.key_word_to_product_map[key_word] = set()
