@@ -185,7 +185,12 @@ class ChatBot:
         elif self.found_brands and len(brands) == 1:
             possible_product_names = [name for name in possible_product_names
                                       if self.product_to_brand_map[name] in brands]
-            response = self.suggest_product_names_from_list(possible_product_names)
+            if len(possible_product_names) == 1:
+                self.found_product_names.update(possible_product_names)
+                response = 'We offer the following product:'
+                response = response + '\n' + self.offer_prices()
+            else:
+                response = self.suggest_product_names_from_list(possible_product_names)
         else:
             response = 'Which of the following brands are you interested in?'
             for brand in possible_brands:
