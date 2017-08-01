@@ -176,10 +176,14 @@ class ChatBot:
             response = 'We offer the following product:'
             response = response + '\n' + self.offer_prices()
         else:
-            response = 'Which of the following products are you interested in?'
-            for product in possible_product_names:
-                response += '\n' + product
-                self.possible_product_names.add(product)
+            response = self.suggest_product_names_from_list(possible_product_names)
+        return response
+
+    def suggest_product_names_from_list(self, products):
+        response = 'Which of the following products are you interested in?'
+        for product in products:
+            response += '\n' + product
+            self.possible_product_names.add(product)
         return response
 
     def suggest_product_names_from_categories_and_brands(self):
@@ -203,10 +207,7 @@ class ChatBot:
             response = 'We offer the following product:'
             response += '\n' + self.offer_prices()
         else:
-            response = 'Which of the following products are you interested in?'
-            for product in products:
-                response += '\n' + product
-                self.possible_product_names.add(product)
+            response = self.suggest_product_names_from_list(products)
         return response
 
     def suggest_product_names_from_multiple_categories_and_one_brand(self, brand):
@@ -229,7 +230,7 @@ class ChatBot:
     def suggest_brands(self):
         if len(self.found_categories) == 1:
             category = list(self.found_categories)[0]
-            response = 'I understand that you are interested in the category {}'.format(category)
+            response = 'I understand that you are interested in the category {}\n'.format(category)
             brands = list(self.store_data[category].keys())
             if len(brands) == 1:
                 brand = brands[0]
@@ -237,14 +238,11 @@ class ChatBot:
                 if len(products) == 1:
                     product = products[0]
                     self.found_product_names.add(product)
-                    response += '\n' + self.offer_prices()
+                    response += self.offer_prices()
                 else:
-                    response += '\nWhich of the following products are you interested in?'
-                    for product in products:
-                        response += '\n' + product
-                        self.possible_product_names.add(product)
+                    response = self.suggest_product_names_from_list(products)
             else:
-                response += '\nWe offer the following brands:'
+                response += 'We offer the following brands:'
                 for brand in self.store_data[category]:
                     response += '\n' + brand
         else:
