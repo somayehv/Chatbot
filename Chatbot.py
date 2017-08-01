@@ -110,7 +110,7 @@ class ChatBot:
         if self.found_product_names:
             return self.offer_prices()
         if self.possible_product_names:
-            self.offer_prices_based_on_possible_product_names()
+            return self.offer_prices_based_on_possible_product_names()
         response = self.DEFAULT_RESPONSE
         if self.found_product_key_words:
             response = self.suggest_product_names_from_key_words()
