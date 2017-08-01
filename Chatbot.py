@@ -15,6 +15,7 @@ class ChatBot:
         self.store_data = {}
         self.brand_to_products_map = {}
         self.brand_to_categories_map = {}
+        self.product_to_brand_map = {}
         self.product_names = []
         self.brands = set()
         self.categories = set()
@@ -56,6 +57,7 @@ class ChatBot:
                     if brand not in self.brand_to_categories_map:
                         self.brand_to_categories_map[brand] = set()
                     self.brand_to_categories_map[brand].add(category)
+                    self.product_to_brand_map[product] = brand
         self.make_key_word_to_category_map()
         self.make_key_word_to_product_map()
 
@@ -171,12 +173,23 @@ class ChatBot:
         possible_product_names = set()
         for key_word in self.found_product_key_words:
             possible_product_names.update(self.key_word_to_product_map[key_word])
+        possible_brands = set()
+        possible_brands.update([self.product_to_brand_map[product_name] for product_name in possible_product_names])
+        brands = possible_brands.intersection(self.found_brands)
         if len(possible_product_names) == 1:
             self.found_product_names.update(possible_product_names)
             response = 'We offer the following product:'
             response = response + '\n' + self.offer_prices()
-        else:
+        elif len(possible_brands) == 1:
             response = self.suggest_product_names_from_list(possible_product_names)
+        elif self.found_brands and len(brands) == 1:
+            possible_product_names = [name for name in possible_product_names
+                                      if self.product_to_brand_map[name] in brands]
+            response = self.suggest_product_names_from_list(possible_product_names)
+        else:
+            response = 'Which of the following brands are you interested in?'
+            for brand in possible_brands:
+                response += '\n' + brand
         return response
 
     def suggest_product_names_from_list(self, products):
