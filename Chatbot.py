@@ -103,27 +103,14 @@ class ChatBot:
         if self.sentence == 'exit':
             return self.GOODBYE
         if self.sentence == 'reset':
-            self.found_categories = set()
-            self.found_category_key_words = set()
-            self.found_brands = set()
-            self.found_product_key_words = set()
-            self.found_product_names = set()
-            self.possible_product_names = set()
+            self.reset()
             return self.WELCOME_BACK
         self.found_categories.update([self.key_word_to_category_map[key_word]
                                       for key_word in self.found_category_key_words])
         if self.found_product_names:
             return self.offer_prices()
         if self.possible_product_names:
-            tokens = nltk.word_tokenize(self.sentence)
-            names_with_intersections = set()
-            for name in self.possible_product_names:
-                temp_tokens = nltk.word_tokenize(name)
-                if set(temp_tokens).intersection(tokens):
-                    names_with_intersections.add(name)
-            if names_with_intersections:
-                self.found_product_names = names_with_intersections
-                return self.offer_prices()
+            self.offer_prices_based_on_possible_product_names()
         response = self.DEFAULT_RESPONSE
         if self.found_product_key_words:
             response = self.suggest_product_names_from_key_words()
@@ -134,6 +121,25 @@ class ChatBot:
         elif self.found_category_key_words and self.found_brands:
             response = self.suggest_product_names_from_categories_and_brands()
         return response
+
+    def reset(self):
+        self.found_categories = set()
+        self.found_category_key_words = set()
+        self.found_brands = set()
+        self.found_product_key_words = set()
+        self.found_product_names = set()
+        self.possible_product_names = set()
+
+    def offer_prices_based_on_possible_product_names(self):
+        tokens = nltk.word_tokenize(self.sentence)
+        names_with_intersections = set()
+        for name in self.possible_product_names:
+            temp_tokens = nltk.word_tokenize(name)
+            if set(temp_tokens).intersection(tokens):
+                names_with_intersections.add(name)
+        if names_with_intersections:
+            self.found_product_names = names_with_intersections
+            return self.offer_prices()
 
     def offer_prices(self):
         response = ''
