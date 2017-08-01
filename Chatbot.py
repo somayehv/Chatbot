@@ -56,6 +56,8 @@ class ChatBot:
                     if brand not in self.brand_to_categories_map:
                         self.brand_to_categories_map[brand] = set()
                     self.brand_to_categories_map[brand].add(category)
+        self.make_key_word_to_category_map()
+        self.make_key_word_to_product_map()
 
     def make_key_word_to_category_map(self):
         for category in self.categories:
@@ -94,10 +96,6 @@ class ChatBot:
         if any(word in self.product_names for word in words):
             self.found_product_names = {word for word in words if word in self.product_names}
 
-    def update_found_categories_using_key_words(self):
-        self.found_categories.update([self.key_word_to_category_map[key_word]
-                                      for key_word in self.found_category_key_words])
-
     def generate_response(self):
         if any(self.sentence == product_name for product_name in self.product_names):
             self.found_product_names = {self.sentence}
@@ -111,6 +109,8 @@ class ChatBot:
             self.found_product_key_words = set()
             self.found_product_names = set()
             return self.WELCOME_BACK
+        self.found_categories.update([self.key_word_to_category_map[key_word]
+                                      for key_word in self.found_category_key_words])
         if self.found_product_names:
             return self.offer_prices()
         if self.possible_product_names:
@@ -249,11 +249,8 @@ if __name__ == "__main__":
     stemmer = PorterStemmer()
     chatbot = ChatBot()
     chatbot.extract_data_from_file('Data.csv')
-    chatbot.make_key_word_to_category_map()
-    chatbot.make_key_word_to_product_map()
     print(chatbot.GREETING)
     while chatbot.sentence != 'exit':
         chatbot.sentence = input().lower()
         chatbot.update_key_words()
-        chatbot.update_found_categories_using_key_words()
         print(chatbot.generate_response())
