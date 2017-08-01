@@ -230,15 +230,17 @@ class ChatBot:
         if len(self.found_categories) == 1:
             category = list(self.found_categories)[0]
             response = 'I understand that you are interested in the category {}'.format(category)
-            if len(self.store_data[category]) == 1:
-                brand = self.store_data[category][0]
-                if len(self.brand_to_products_map[brand]) == 1:
-                    self.found_product_names.add(
-                        self.brand_to_products_map[self.store_data[list(self.found_categories)[0]][0]][0])
+            brands = list(self.store_data[category].keys())
+            if len(brands) == 1:
+                brand = brands[0]
+                products = self.brand_to_products_map[brand]
+                if len(products) == 1:
+                    product = products[0]
+                    self.found_product_names.add(product)
                     response += '\n' + self.offer_prices()
                 else:
                     response += '\nWhich of the following products are you interested in?'
-                    for product in self.brand_to_products_map[self.store_data[list(self.found_categories)[0]][0]]:
+                    for product in products:
                         response += '\n' + product
                         self.possible_product_names.add(product)
             else:
