@@ -108,6 +108,7 @@ class ChatBot:
             self.found_brands = set()
             self.found_product_key_words = set()
             self.found_product_names = set()
+            self.possible_product_names = set()
             return self.WELCOME_BACK
         self.found_categories.update([self.key_word_to_category_map[key_word]
                                       for key_word in self.found_category_key_words])
