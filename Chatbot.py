@@ -159,6 +159,7 @@ class ChatBot:
             categories = self.brand_to_categories_map[brand]
             if len(categories) == 1:
                 self.found_categories.add(list(categories)[0])
+                response = self.suggest_product_names_from_categories_and_brands()
             else:
                 response = 'I understand you are interested in the brand {}. ' \
                            'Which of the following categories are you interested in?'.format(brand)
