@@ -24,7 +24,6 @@ class ChatBot:
         self.category_key_words = set()
         self.key_word_to_category_map = {}
         self.key_word_to_product_map = {}
-        self.category, self.brand, self.product_name = None, None, None
         self.sentence = ''
         self.found_category_key_words = set()
         self.found_categories = set()
