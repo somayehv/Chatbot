@@ -141,7 +141,9 @@ class ChatBot:
                 names_with_intersections.add(name)
         if names_with_intersections:
             self.found_product_names = names_with_intersections
-            return self.offer_prices()
+        else:
+            self.found_product_names = self.possible_product_names
+        return self.offer_prices()
 
     def offer_prices(self):
         response = ''
